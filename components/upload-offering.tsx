@@ -5,24 +5,23 @@ import { supabase } from "@/lib/supabaseClient";
 
 type FileItem = {
   id: string;
-  title: string;
-  upload_date: string;
-  upload_time: string;
+  filename: string;
+  created_at: string;
 };
 
 export default function UploadOffering() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Ambil data awal + pasang realtime listener
+  // Fetch awal & realtime
   useEffect(() => {
     fetchFiles();
 
     const channel = supabase
-      .channel("files-changes")
+      .channel("uploads-changes")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "files" },
+        { event: "INSERT", schema: "public", table: "uploads" },
         (payload) => {
           setFiles((prev) => [payload.new as FileItem, ...prev]);
         }
@@ -36,10 +35,9 @@ export default function UploadOffering() {
 
   async function fetchFiles() {
     const { data } = await supabase
-      .from("files")
+      .from("uploads")
       .select("*")
-      .order("upload_date", { ascending: false })
-      .order("upload_time", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (data) setFiles(data);
   }
@@ -67,16 +65,16 @@ export default function UploadOffering() {
         <input type="file" className="hidden" onChange={handleUpload} />
       </label>
 
-      {/* List judul file */}
+      {/* List file */}
       <div className="w-full max-h-[60vh] overflow-y-auto space-y-2">
         {files.map((f) => (
           <div
             key={f.id}
             className="p-3 border rounded-lg bg-white shadow-sm"
           >
-            <div className="font-medium">{f.title}</div>
+            <div className="font-medium">{f.filename}</div>
             <div className="text-sm text-gray-500">
-              {f.upload_date} {f.upload_time}
+              {new Date(f.created_at).toLocaleString()}
             </div>
           </div>
         ))}
