@@ -5,7 +5,7 @@ export default function Page() {
     // Beri padding-top yang lebih besar supaya konten tidak tertutup logo
     // nilai ini cukup besar agar logo yang 'menjorok' ke bawah tidak memotong tombol.
     // Sesuaikan kalau logo kamu lebih kecil/besar.
-    <main className="min-h-dvh relative flex flex-col items-center pt-48 md:pt-64 lg:pt-80">
+    <main className="min-h-dvh relative flex flex-col items-center pt-36 md:pt-48 lg:pt-56">
       {/* Corner accents */}
       <img
         src="/images/top-left.png"
