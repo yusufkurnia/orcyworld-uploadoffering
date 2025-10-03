@@ -1,151 +1,124 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react"
+import { cn } from "@/lib/utils"
 
 type Offering = {
-  id: string;
-  title: string;
-  ext: string;
-  createdAt: number;
-};
+  id: string
+  title: string
+  ext: string
+  createdAt: number
+}
 
-const STORAGE_KEY = "offerings-meta-v1";
+const STORAGE_KEY = "offerings-meta-v1"
 
 function formatLine(o: Offering) {
-  const d = new Date(o.createdAt);
-  return `${o.title}${o.ext || ""} - ${d.toLocaleDateString()} - ${d.toLocaleTimeString()}`;
+  const d = new Date(o.createdAt)
+  return `${o.title}${o.ext || ""} - ${d.toLocaleDateString()} - ${d.toLocaleTimeString()}`
 }
 
 function splitName(name: string): { title: string; ext: string } {
-  const lastDot = name.lastIndexOf(".");
-  if (lastDot <= 0 || lastDot === name.length - 1) return { title: name, ext: "" };
-  return { title: name.slice(0, lastDot), ext: name.slice(lastDot) };
+  const lastDot = name.lastIndexOf(".")
+  if (lastDot <= 0 || lastDot === name.length - 1) return { title: name, ext: "" }
+  return { title: name.slice(0, lastDot), ext: name.slice(lastDot) }
 }
 
 export function UploadOffering() {
-  const [items, setItems] = useState<Offering[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const listRef = useRef<HTMLDivElement | null>(null);
+  const [items, setItems] = useState<Offering[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const listRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Load/save localStorage
+  useEffect(() => {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) setItems(JSON.parse(raw))
+  }, [])
 
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        setItems(JSON.parse(raw));
-      } catch {
-        setItems([]);
-      }
-    }
-  }, []);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+  }, [items])
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch {}
-  }, [items]);
+  const beginSelect = () => inputRef.current?.click()
 
-  function beginSelect() {
-    inputRef.current?.click();
-  }
+  const handleFilePicked = (file?: File) => {
+    if (!file) return
+    setUploading(true)
+    setProgress(0)
 
-  function handleFilePicked(file?: File) {
-    if (!file) return;
-    setUploading(true);
-    setProgress(0);
-
-    const start = Date.now();
-    const interval = setInterval(() => {
+    const start = Date.now()
+    const t = setInterval(() => {
       setProgress((p) => {
-        const elapsed = Date.now() - start;
-        return Math.min(98, Math.max(p + Math.random() * 12, elapsed / 50));
-      });
-    }, 200);
+        const elapsed = Date.now() - start
+        return Math.min(98, Math.max(p + Math.random() * 12, elapsed / 50))
+      })
+    }, 200)
 
-    const totalDelay = 800 + Math.random() * 1200;
+    const totalDelay = 800 + Math.random() * 1200
     setTimeout(() => {
-      clearInterval(interval);
-      setProgress(100);
-
-      const { title, ext } = splitName(file.name);
-      const newItem: Offering = { id: `${Date.now()}`, title, ext, createdAt: Date.now() };
-      setItems((prev) => [newItem, ...prev]);
-
+      clearInterval(t)
+      setProgress(100)
+      const { title, ext } = splitName(file.name)
+      const newItem: Offering = { id: `${Date.now()}`, title, ext, createdAt: Date.now() }
+      setItems((arr) => [newItem, ...arr])
       setTimeout(() => {
-        setUploading(false);
-        setProgress(0);
-        if (inputRef.current) inputRef.current.value = "";
-        listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-      }, 300);
-    }, totalDelay);
+        setUploading(false)
+        setProgress(0)
+        if (inputRef.current) inputRef.current.value = ""
+        listRef.current?.scrollTo({ top: 0 })
+      }, 350)
+    }, totalDelay)
   }
 
   return (
-    <>
+    <div className="w-full max-w-md flex flex-col items-center space-y-4 px-4">
       <input
         ref={inputRef}
         type="file"
         hidden
         onChange={(e) => handleFilePicked(e.target.files?.[0])}
-        aria-hidden
       />
 
-      {/* Fixed button: centered under the logo.
-          Adjust top values if you need different spacing. */}
-      <div className="fixed left-1/2 -translate-x-1/2 z-40">
-        <button
-          onClick={beginSelect}
-          disabled={uploading}
-          className="px-6 py-3 rounded-md font-semibold transition border-2 border-black shadow-lg bg-[#FFDE00] text-black hover:shadow-xl disabled:opacity-60"
-          style={{ WebkitTapHighlightColor: "transparent" }}
-          // Responsive top spacing via inline styles with Tailwind utility wrappers:
-        >
-          {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload Offering"}
-        </button>
-
-        {/* progress bar (position relative below the button) */}
-        {uploading && (
-          <div className="w-56 h-2 rounded-md bg-black/10 overflow-hidden mt-3 mx-auto">
-            <div
-              className="h-full bg-[#FFDE00] transition-all duration-200 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+      {/* Upload button below logo */}
+      <button
+        onClick={beginSelect}
+        disabled={uploading}
+        className={cn(
+          "px-6 py-3 rounded-md shadow-md font-medium",
+          "bg-[#FFDE00] text-black hover:opacity-95 transition"
         )}
-      </div>
+      >
+        {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload File"}
+      </button>
 
-      {/* Scrollable list area
-          We position it fixed and make its top sit below the button.
-          top values chosen to match button vertical placement (responsive).
-          Adjust these `top-[...]` values if you tweak button top spacing. */}
+      {/* Progress bar */}
+      {uploading && (
+        <div className="w-full h-2 rounded-md bg-black/20 overflow-hidden">
+          <div
+            className="h-full bg-[#FFDE00] transition-all duration-200 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
+
+      {/* Scrollable list */}
       <div
         ref={listRef}
-        className="
-          fixed left-0 right-0 bottom-0
-          top-[12.5rem] md:top-[14.5rem] lg:top-[16.5rem]
-          overflow-y-auto flex justify-center
-        "
+        className="w-full max-h-[60vh] overflow-y-auto flex flex-col items-center space-y-2"
       >
-        <div className="w-full max-w-md px-4 pt-4 pb-8">
-          {items.length === 0 ? (
-            <p className="text-[#FFDE00] text-center">No files uploaded yet</p>
-          ) : (
-            items
-              .sort((a, b) => b.createdAt - a.createdAt)
-              .map((o) => (
-                <div
-                  key={o.id}
-                  className="leading-relaxed w-full text-center text-sm text-[#FFDE00] py-2"
-                >
-                  {formatLine(o)}
-                </div>
-              ))
-          )}
-        </div>
+        {items.length === 0 ? (
+          <p className="text-[#FFDE00] mt-4 text-center">No files uploaded yet</p>
+        ) : (
+          items
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .map((o) => (
+              <div key={o.id} className="w-full text-center leading-relaxed">
+                {formatLine(o)}
+              </div>
+            ))
+        )}
       </div>
-    </>
-  );
+    </div>
+  )
 }
-
-export default UploadOffering;
