@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 
 type Offering = {
@@ -23,15 +23,14 @@ function splitName(name: string): { title: string; ext: string } {
   return { title: name.slice(0, lastDot), ext: name.slice(lastDot) }
 }
 
-type Props = { logoOffsetTop: number }
-
-export function UploadOffering({ logoOffsetTop }: Props) {
+export function UploadOffering() {
   const [items, setItems] = useState<Offering[]>([])
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Load/save localStorage
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) setItems(JSON.parse(raw))
@@ -73,7 +72,7 @@ export function UploadOffering({ logoOffsetTop }: Props) {
   }
 
   return (
-    <>
+    <div className="w-full max-w-md flex flex-col items-center space-y-4 px-4">
       <input
         ref={inputRef}
         type="file"
@@ -81,14 +80,13 @@ export function UploadOffering({ logoOffsetTop }: Props) {
         onChange={(e) => handleFilePicked(e.target.files?.[0])}
       />
 
-      {/* Upload button di bawah logo */}
+      {/* Upload button below logo */}
       <button
         onClick={beginSelect}
         disabled={uploading}
         className={cn(
-          "absolute left-1/2 -translate-x-1/2 z-10 px-6 py-3 rounded-md shadow-md font-medium",
-          "bg-[#FFDE00] text-black hover:opacity-95 transition",
-          `top-[${logoOffsetTop + 96}px]` // 96px jarak dari logo
+          "px-6 py-3 rounded-md shadow-md font-medium",
+          "bg-[#FFDE00] text-black hover:opacity-95 transition"
         )}
       >
         {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload File"}
@@ -96,10 +94,7 @@ export function UploadOffering({ logoOffsetTop }: Props) {
 
       {/* Progress bar */}
       {uploading && (
-        <div
-          className="absolute left-1/2 -translate-x-1/2 w-56 h-2 rounded-md bg-black/20 overflow-hidden z-10"
-          style={{ top: logoOffsetTop + 136 }}
-        >
+        <div className="w-full h-2 rounded-md bg-black/20 overflow-hidden">
           <div
             className="h-full bg-[#FFDE00] transition-all duration-200 ease-out"
             style={{ width: `${progress}%` }}
@@ -107,24 +102,23 @@ export function UploadOffering({ logoOffsetTop }: Props) {
         </div>
       )}
 
-      {/* Scrollable list di bawah tombol */}
+      {/* Scrollable list */}
       <div
         ref={listRef}
-        className="absolute left-0 right-0 mx-auto max-w-md px-4 overflow-y-auto flex flex-col items-center"
-        style={{ top: logoOffsetTop + 160, bottom: 40 }}
+        className="w-full max-h-[60vh] overflow-y-auto flex flex-col items-center space-y-2"
       >
         {items.length === 0 ? (
-          <p className="text-[#FFDE00] mt-4">No files uploaded yet</p>
+          <p className="text-[#FFDE00] mt-4 text-center">No files uploaded yet</p>
         ) : (
           items
             .sort((a, b) => b.createdAt - a.createdAt)
             .map((o) => (
-              <div key={o.id} className="leading-relaxed w-full text-center">
+              <div key={o.id} className="w-full text-center leading-relaxed">
                 {formatLine(o)}
               </div>
             ))
         )}
       </div>
-    </>
+    </div>
   )
 }
