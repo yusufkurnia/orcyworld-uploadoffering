@@ -1,4 +1,4 @@
-import { UploadOffering } from "@/components/upload-offering"
+import UploadOffering from "@/components/upload-offering";
 
 export default function Page() {
   return (
@@ -36,8 +36,8 @@ export default function Page() {
         className="fixed top-8 left-1/2 -translate-x-1/2 w-40 md:w-56 h-auto select-none pointer-events-none"
       />
 
-      {/* Upload widget renders fixed button + scrollable list */}
+      {/* Upload widget */}
       <UploadOffering />
     </main>
-  )
+  );
 }
