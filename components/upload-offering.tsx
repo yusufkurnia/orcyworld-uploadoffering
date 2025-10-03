@@ -1,14 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 type Offering = {
   id: string
   title: string
-  ext: string // includes dot, e.g. ".pdf" or "" if none
-  createdAt: number // epoch ms
+  ext: string
+  createdAt: number
 }
 
 const STORAGE_KEY = "offerings-meta-v1"
@@ -28,15 +27,11 @@ function splitName(name: string): { title: string; ext: string } {
 
 export function UploadOffering() {
   const [items, setItems] = useState<Offering[]>([])
-  const [displayCount, setDisplayCount] = useState(12)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
-
+  const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const listRef = useRef<HTMLDivElement>(null) // root scroll container
 
-  // Load/save metadata in localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
@@ -50,33 +45,12 @@ export function UploadOffering() {
     } catch {}
   }, [items])
 
-  // Infinite reveal
-  useEffect(() => {
-    const el = sentinelRef.current
-    const rootEl = listRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const [e] = entries
-        if (e.isIntersecting) setDisplayCount((c) => c + 10)
-      },
-      { root: rootEl, rootMargin: "200px" }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
-
-  const ordered = useMemo(() => [...items].sort((a, b) => b.createdAt - a.createdAt), [items])
-  const visible = ordered.slice(0, displayCount)
-
-  function beginSelect() {
-    if (uploading) return
-    inputRef.current?.click()
+  const beginSelect = () => {
+    if (!uploading) inputRef.current?.click()
   }
 
-  function handleFilePicked(file?: File) {
+  const handleFilePicked = (file?: File) => {
     if (!file) return
-
     setUploading(true)
     setProgress(0)
 
@@ -86,7 +60,7 @@ export function UploadOffering() {
         const elapsed = Date.now() - start
         return Math.min(98, Math.max(p + Math.random() * 12, elapsed / 50))
       })
-    }, 250)
+    }, 200)
 
     const totalDelay = 800 + Math.random() * 1200
     setTimeout(() => {
@@ -99,18 +73,20 @@ export function UploadOffering() {
         ext,
         createdAt: Date.now(),
       }
-      setItems((prev) => [newItem, ...prev])
+      setItems((arr) => [newItem, ...arr])
 
       setTimeout(() => {
         setUploading(false)
         setProgress(0)
         if (inputRef.current) inputRef.current.value = ""
+        // Scroll to top of list after new file added
+        listRef.current?.scrollTo({ top: 0 })
       }, 350)
     }, totalDelay)
   }
 
   return (
-    <div className="w-full">
+    <>
       <input
         ref={inputRef}
         type="file"
@@ -119,47 +95,45 @@ export function UploadOffering() {
         aria-label="Pilih berkas untuk diunggah"
       />
 
-      <Button
+      {/* Upload button */}
+      <button
         onClick={beginSelect}
         disabled={uploading}
-        style={{ backgroundColor: "#FFDE00", color: "#000" }}
         className={cn(
-          "fixed left-1/2 -translate-x-1/2 top-36 md:top-44 z-10 px-5 py-2.5 rounded-md",
-          "shadow-[0_0_0_1px_var(--color-border)]"
+          "fixed top-[calc(5rem+10px)] left-1/2 -translate-x-1/2 z-10 px-6 py-3 rounded-md shadow-md font-medium",
+          "bg-[#FFDE00] text-black hover:opacity-95 transition"
         )}
       >
         {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload File"}
-      </Button>
+      </button>
 
+      {/* Progress bar */}
       {uploading && (
-        <div
-          className="fixed left-1/2 -translate-x-1/2 top-48 md:top-56 w-56 h-2 rounded-md bg-black/20 overflow-hidden z-10"
-          aria-hidden="true"
-        >
+        <div className="fixed top-[calc(5rem+56px)] left-1/2 -translate-x-1/2 w-56 h-2 rounded-md bg-black/20 overflow-hidden z-10">
           <div
-            className="h-full bg-black transition-all duration-200 ease-out"
+            className="h-full bg-[#FFDE00] transition-all duration-200 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
       )}
 
+      {/* Scrollable list */}
       <div
         ref={listRef}
-        className="fixed inset-x-0 top-48 md:top-56 bottom-10 md:bottom-14 overflow-y-auto mx-auto max-w-md px-4 ritual-list"
+        className="fixed top-[calc(5rem+72px)] bottom-10 inset-x-0 mx-auto max-w-md px-4 overflow-y-auto flex flex-col items-center ritual-list"
       >
-        {visible.length === 0 ? (
-          <p className="ritual-list text-center mt-8" style={{ color: "#FFDE00" }}>No files uploaded yet</p>
+        {items.length === 0 ? (
+          <p className="text-[#FFDE00] mt-4">No files uploaded yet</p>
         ) : (
-          <>
-            {visible.map((o) => (
-              <div key={o.id} className="leading-relaxed">
+          items
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .map((o) => (
+              <div key={o.id} className="leading-relaxed w-full text-center">
                 {formatLine(o)}
               </div>
-            ))}
-            <div ref={sentinelRef} className="h-8" />
-          </>
+            ))
         )}
       </div>
-    </div>
+    </>
   )
 }
