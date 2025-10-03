@@ -148,7 +148,7 @@ export function UploadOffering() {
         className="fixed inset-x-0 top-48 md:top-56 bottom-10 md:bottom-14 overflow-y-auto mx-auto max-w-md px-4 ritual-list"
       >
         {visible.length === 0 ? (
-          <p className="text-center mt-8 text-gray-500">No files uploaded yet</p>
+          <p className="ritual-list text-center mt-8" style={{ color: "#FFDE00" }}>No files uploaded yet</p>
         ) : (
           <>
             {visible.map((o) => (
