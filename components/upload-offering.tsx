@@ -85,11 +85,12 @@ export function UploadOffering() {
         onClick={beginSelect}
         disabled={uploading}
         className={cn(
-          "px-6 py-3 rounded-md shadow-md font-medium",
-          "bg-[#FFDE00] text-black hover:opacity-95 transition"
+          "px-6 py-3 rounded-md shadow-md font-medium border-2",
+          "bg-[#FFDE00] text-black hover:opacity-95 transition",
+          "border-black"
         )}
       >
-        {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload File"}
+        {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload Offering"}
       </button>
 
       {/* Progress bar */}
@@ -113,7 +114,7 @@ export function UploadOffering() {
           items
             .sort((a, b) => b.createdAt - a.createdAt)
             .map((o) => (
-              <div key={o.id} className="w-full text-center leading-relaxed">
+              <div key={o.id} className="w-full text-center leading-relaxed text-[#FFDE00]">
                 {formatLine(o)}
               </div>
             ))
@@ -122,3 +123,5 @@ export function UploadOffering() {
     </div>
   )
 }
+
+export default UploadOffering
