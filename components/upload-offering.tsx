@@ -41,11 +41,6 @@ export default function UploadOffering() {
     }, 500);
   };
 
-  const handleRefresh = () => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) setFiles(JSON.parse(raw));
-  };
-
   const formatLine = (f: FileItem) => {
     const d = new Date(f.created_at);
     return `${f.filename} - ${d.toLocaleString()}`;
@@ -57,13 +52,6 @@ export default function UploadOffering() {
         {loading ? "Uploading..." : "Upload File"}
         <input type="file" className="hidden" onChange={handleUpload} />
       </label>
-
-      <button
-        className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition"
-        onClick={handleRefresh}
-      >
-        Refresh List
-      </button>
 
       <div className="w-full max-h-[60vh] overflow-y-auto space-y-2">
         {files.map((f) => (
@@ -78,4 +66,3 @@ export default function UploadOffering() {
     </div>
   );
 }
-
