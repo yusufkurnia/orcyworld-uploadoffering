@@ -3,7 +3,7 @@ import { UploadOffering } from "@/components/upload-offering";
 export default function Page() {
   return (
     // padding-top responsif: mobile pt-28, md:pt-36, lg:pt-44
-    <main className="min-h-dvh relative flex flex-col items-center pt-32 md:pt-44 lg:pt-52">
+    <main className="min-h-dvh relative flex flex-col items-center pt-36 md:pt-48 lg:pt-56">
       {/* Corner accents */}
       <img
         src="/images/top-left.png"
