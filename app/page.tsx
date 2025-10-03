@@ -1,10 +1,9 @@
-import { UploadOffering } from "@/components/upload-offering"
+import { UploadOffering } from "@/components/upload-offering";
 
 export default function Page() {
   return (
-    <main className="min-h-dvh relative flex flex-col items-center pt-[14rem]">
-      {/* pt-[14rem] leaves space for fixed logo at top-20 (80px) + some margin */}
-
+    // responsive top padding: small screens pt-28, medium pt-36, large pt-48
+    <main className="min-h-dvh relative flex flex-col items-center pt-28 md:pt-36 lg:pt-48">
       {/* Corner accents */}
       <img
         src="/images/top-left.png"
@@ -31,15 +30,15 @@ export default function Page() {
         className="pointer-events-none select-none fixed right-2 bottom-2 w-24 md:w-36 opacity-90"
       />
 
-      {/* Logo */}
+      {/* Logo (fixed) — beri z-index tinggi agar selalu di atas jika ada overlap */}
       <img
         src="/images/logo.jpeg"
         alt="Ritual seal"
-        className="fixed top-20 left-1/2 -translate-x-1/2 w-40 md:w-56 h-auto select-none pointer-events-none"
+        className="fixed top-8 left-1/2 -translate-x-1/2 w-40 md:w-56 h-auto select-none pointer-events-none z-50"
       />
 
-      {/* Upload widget in normal flow */}
+      {/* Upload widget sits in normal flow below the logo */}
       <UploadOffering />
     </main>
-  )
+  );
 }
