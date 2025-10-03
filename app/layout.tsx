@@ -16,8 +16,8 @@ const cabinSketch = Cabin_Sketch({
 
 export const metadata: Metadata = {
   title: "nurdata-offering",
-  description: "Created with v0",
-  generator: "v0.app",
+  description: "ORCYWORLD",
+  generator: "ORCYWORLD",
 }
 
 export default function RootLayout({
