@@ -29,14 +29,14 @@ export default function Page() {
         className="pointer-events-none select-none fixed right-2 bottom-2 w-24 md:w-36 opacity-90"
       />
 
-      {/* Logo (fixed, on top) */}
+      {/* Logo (fixed) — berada paling atas (z-50) */}
       <img
         src="/images/logo.jpeg"
         alt="Ritual seal"
         className="fixed top-6 left-1/2 -translate-x-1/2 w-40 md:w-56 h-auto select-none pointer-events-none z-50"
       />
 
-      {/* UploadOffering will render fixed button + a full-height scrollable list */}
+      {/* UploadOffering will render the fixed button + fixed list area */}
       <UploadOffering />
     </main>
   );
