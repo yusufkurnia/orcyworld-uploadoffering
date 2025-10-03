@@ -1,116 +1,89 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { supabase } from "@/lib/supabaseClient"
 
 type Offering = {
   id: string
-  title: string
-  ext: string // includes dot, e.g. ".pdf" or "" if none
-  createdAt: number // epoch ms
+  filename: string
+  created_at: string
 }
-
-const STORAGE_KEY = "offerings-meta-v1"
 
 function formatLine(o: Offering) {
-  const d = new Date(o.createdAt)
-  const date = d.toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" })
-  const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
-  return `${o.title}${o.ext ? o.ext : ""} - ${date} - ${time}`
-}
-
-function splitName(name: string): { title: string; ext: string } {
-  const lastDot = name.lastIndexOf(".")
-  if (lastDot <= 0 || lastDot === name.length - 1) return { title: name, ext: "" }
-  return { title: name.slice(0, lastDot), ext: name.slice(lastDot) }
+  const d = new Date(o.created_at)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, "0")
+  const dd = String(d.getDate()).padStart(2, "0")
+  const hh = String(d.getHours()).padStart(2, "0")
+  const min = String(d.getMinutes()).padStart(2, "0")
+  return `${o.filename} – ${yyyy}-${mm}-${dd} – ${hh}:${min}`
 }
 
 export function UploadOffering() {
   const [items, setItems] = useState<Offering[]>([])
-  const [displayCount, setDisplayCount] = useState(12)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
 
   const inputRef = useRef<HTMLInputElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const listRef = useRef<HTMLDivElement>(null) // root scroll container for IntersectionObserver
 
-  // Load/save only metadata locally (not the files)
+  // fetch awal + subscribe realtime
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) setItems(JSON.parse(raw))
-    } catch {}
-  }, [])
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-    } catch {}
-  }, [items])
+    supabase
+      .from("uploads")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) setItems(data as Offering[])
+      })
 
-  // Infinite reveal when bottom sentinel intersects
-  useEffect(() => {
-    const el = sentinelRef.current
-    const rootEl = listRef.current // observe within the scrollable list container
-    if (!el) return
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const [e] = entries
-        if (e.isIntersecting) {
-          setDisplayCount((c) => c + 10)
+    const channel = supabase
+      .channel("realtime:uploads")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "uploads" },
+        (payload) => {
+          setItems((prev) => [payload.new as Offering, ...prev])
         }
-      },
-      { root: rootEl, rootMargin: "200px" }, // root is the scroll container
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
-  const ordered = useMemo(() => [...items].sort((a, b) => b.createdAt - a.createdAt), [items])
-  const visible = ordered.slice(0, displayCount)
-
-  function beginSelect() {
-    if (uploading) return
-    inputRef.current?.click()
-  }
-
-  function handleFilePicked(file?: File) {
+  async function handleFilePicked(file?: File) {
     if (!file) return
-    // Visual trick: fake network upload
     setUploading(true)
     setProgress(0)
 
-    // Randomized progress
+    // simulasi progress bar
     const start = Date.now()
     const t = setInterval(() => {
-      setProgress((p) => {
-        const elapsed = Date.now() - start
-        const next = Math.min(98, Math.max(p + Math.random() * 12, elapsed / 50))
-        return next
-      })
-    }, 250)
+      setProgress((p) => Math.min(95, p + Math.random() * 10))
+    }, 200)
 
-    // "Complete" after short delay
-    const totalDelay = 800 + Math.random() * 1200
-    setTimeout(() => {
+    setTimeout(async () => {
       clearInterval(t)
       setProgress(100)
-      const { title, ext } = splitName(file.name)
-      const newItem: Offering = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        title,
-        ext,
-        createdAt: Date.now(),
-      }
-      setItems((arr) => [newItem, ...arr])
-      // reset
+
+      // simpan ke supabase
+      const { error } = await supabase.from("uploads").insert({ filename: file.name })
+      if (error) console.error(error)
+
       setTimeout(() => {
         setUploading(false)
         setProgress(0)
         if (inputRef.current) inputRef.current.value = ""
-      }, 350)
-    }, totalDelay)
+      }, 400)
+    }, 1500)
+  }
+
+  function beginSelect() {
+    if (uploading) return
+    inputRef.current?.click()
   }
 
   return (
@@ -120,7 +93,6 @@ export function UploadOffering() {
         type="file"
         hidden
         onChange={(e) => handleFilePicked(e.target.files?.[0] || undefined)}
-        aria-label="Pilih berkas untuk diunggah"
       />
 
       <Button
@@ -128,43 +100,29 @@ export function UploadOffering() {
         disabled={uploading}
         className={cn(
           "fixed left-1/2 -translate-x-1/2 top-48 md:top-64 z-10",
-          "bg-primary text-primary-foreground hover:opacity-95 px-5 py-2.5 rounded-md",
-          "shadow-[0_0_0_1px_var(--color-border)]",
+          "bg-primary text-primary-foreground hover:opacity-95 px-5 py-2.5 rounded-md"
         )}
       >
         {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload Offering"}
       </Button>
 
       {uploading && (
-        <div
-          className="fixed left-1/2 -translate-x-1/2 top-60 md:top-72 w-56 h-2 rounded-md bg-secondary/30 overflow-hidden z-10"
-          aria-hidden="true"
-        >
+        <div className="fixed left-1/2 -translate-x-1/2 top-60 md:top-72 w-56 h-2 rounded-md bg-secondary/30 overflow-hidden z-10">
           <div className="h-full bg-primary transition-all duration-200 ease-out" style={{ width: `${progress}%` }} />
         </div>
       )}
 
-      {items.length === 0 ? (
-        <div
-          ref={listRef}
-          className="fixed inset-x-0 top-72 md:top-80 bottom-10 md:bottom-14 overflow-y-auto mx-auto max-w-md px-4"
-        >
-          <p className="ritual-list text-center mt-8 text-accent">No offerings uploaded yet</p>
-        </div>
-      ) : (
-        <div
-          ref={listRef}
-          className="fixed inset-x-0 top-72 md:top-80 bottom-10 md:bottom-14 overflow-y-auto mx-auto max-w-md px-4 ritual-list"
-        >
-          {visible.map((o) => (
+      <div className="fixed inset-x-0 top-72 md:top-80 bottom-10 md:bottom-14 overflow-y-auto mx-auto max-w-md px-4 ritual-list">
+        {items.length === 0 ? (
+          <p className="text-center mt-8 text-accent">No offerings uploaded yet</p>
+        ) : (
+          items.map((o) => (
             <div key={o.id} className="leading-relaxed">
               {formatLine(o)}
             </div>
-          ))}
-          {/* sentinel for infinite reveal */}
-          <div ref={sentinelRef} className="h-8" />
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   )
 }
