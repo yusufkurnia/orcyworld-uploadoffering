@@ -14,9 +14,7 @@ const STORAGE_KEY = "offerings-meta-v1"
 
 function formatLine(o: Offering) {
   const d = new Date(o.createdAt)
-  const date = d.toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" })
-  const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
-  return `${o.title}${o.ext ? o.ext : ""} - ${date} - ${time}`
+  return `${o.title}${o.ext || ""} - ${d.toLocaleDateString()} - ${d.toLocaleTimeString()}`
 }
 
 function splitName(name: string): { title: string; ext: string } {
@@ -25,7 +23,9 @@ function splitName(name: string): { title: string; ext: string } {
   return { title: name.slice(0, lastDot), ext: name.slice(lastDot) }
 }
 
-export function UploadOffering() {
+type Props = { logoOffsetTop: number }
+
+export function UploadOffering({ logoOffsetTop }: Props) {
   const [items, setItems] = useState<Offering[]>([])
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -33,21 +33,15 @@ export function UploadOffering() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) setItems(JSON.parse(raw))
-    } catch {}
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) setItems(JSON.parse(raw))
   }, [])
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-    } catch {}
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   }, [items])
 
-  const beginSelect = () => {
-    if (!uploading) inputRef.current?.click()
-  }
+  const beginSelect = () => inputRef.current?.click()
 
   const handleFilePicked = (file?: File) => {
     if (!file) return
@@ -67,19 +61,12 @@ export function UploadOffering() {
       clearInterval(t)
       setProgress(100)
       const { title, ext } = splitName(file.name)
-      const newItem: Offering = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        title,
-        ext,
-        createdAt: Date.now(),
-      }
+      const newItem: Offering = { id: `${Date.now()}`, title, ext, createdAt: Date.now() }
       setItems((arr) => [newItem, ...arr])
-
       setTimeout(() => {
         setUploading(false)
         setProgress(0)
         if (inputRef.current) inputRef.current.value = ""
-        // Scroll to top of list after new file added
         listRef.current?.scrollTo({ top: 0 })
       }, 350)
     }, totalDelay)
@@ -91,17 +78,17 @@ export function UploadOffering() {
         ref={inputRef}
         type="file"
         hidden
-        onChange={(e) => handleFilePicked(e.target.files?.[0] || undefined)}
-        aria-label="Pilih berkas untuk diunggah"
+        onChange={(e) => handleFilePicked(e.target.files?.[0])}
       />
 
-      {/* Upload button */}
+      {/* Upload button di bawah logo */}
       <button
         onClick={beginSelect}
         disabled={uploading}
         className={cn(
-          "fixed top-[calc(5rem+10px)] left-1/2 -translate-x-1/2 z-10 px-6 py-3 rounded-md shadow-md font-medium",
-          "bg-[#FFDE00] text-black hover:opacity-95 transition"
+          "absolute left-1/2 -translate-x-1/2 z-10 px-6 py-3 rounded-md shadow-md font-medium",
+          "bg-[#FFDE00] text-black hover:opacity-95 transition",
+          `top-[${logoOffsetTop + 96}px]` // 96px jarak dari logo
         )}
       >
         {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload File"}
@@ -109,7 +96,10 @@ export function UploadOffering() {
 
       {/* Progress bar */}
       {uploading && (
-        <div className="fixed top-[calc(5rem+56px)] left-1/2 -translate-x-1/2 w-56 h-2 rounded-md bg-black/20 overflow-hidden z-10">
+        <div
+          className="absolute left-1/2 -translate-x-1/2 w-56 h-2 rounded-md bg-black/20 overflow-hidden z-10"
+          style={{ top: logoOffsetTop + 136 }}
+        >
           <div
             className="h-full bg-[#FFDE00] transition-all duration-200 ease-out"
             style={{ width: `${progress}%` }}
@@ -117,10 +107,11 @@ export function UploadOffering() {
         </div>
       )}
 
-      {/* Scrollable list */}
+      {/* Scrollable list di bawah tombol */}
       <div
         ref={listRef}
-        className="fixed top-[calc(5rem+72px)] bottom-10 inset-x-0 mx-auto max-w-md px-4 overflow-y-auto flex flex-col items-center ritual-list"
+        className="absolute left-0 right-0 mx-auto max-w-md px-4 overflow-y-auto flex flex-col items-center"
+        style={{ top: logoOffsetTop + 160, bottom: 40 }}
       >
         {items.length === 0 ? (
           <p className="text-[#FFDE00] mt-4">No files uploaded yet</p>
