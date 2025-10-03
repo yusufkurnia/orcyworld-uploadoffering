@@ -91,12 +91,13 @@ export function UploadOffering() {
         aria-hidden
       />
 
-      <div className="w-full max-w-md px-4 flex flex-col items-center mt-2 md:mt-4">
-        {/* Upload button */}
+      {/* Container di flow normal; beri margin-top tambahan sebagai safety */}
+      <div className="w-full max-w-md px-4 flex flex-col items-center mt-6 md:mt-8">
+        {/* Tombol: z-index lebih kecil dari logo (logo z-50). margin-top memastikan tidak dekat logo */}
         <button
           onClick={beginSelect}
           disabled={uploading}
-          className="z-20 px-6 py-3 rounded-md font-semibold transition border-2 border-black shadow-lg bg-[#FFDE00] text-black hover:shadow-xl disabled:opacity-60"
+          className="z-20 px-6 py-3 rounded-md font-semibold transition border-2 border-black shadow-lg bg-[#FFDE00] text-black hover:shadow-xl disabled:opacity-60 mt-2"
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
           {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload File"}
@@ -123,10 +124,7 @@ export function UploadOffering() {
             items
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((o) => (
-                <div
-                  key={o.id}
-                  className="leading-relaxed w-full text-center text-sm text-[#FFDE00]"
-                >
+                <div key={o.id} className="leading-relaxed w-full text-center text-sm text-[#FFDE00]">
                   {formatLine(o)}
                 </div>
               ))
