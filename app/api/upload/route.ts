@@ -4,14 +4,13 @@ import { supabase } from "@/lib/supabaseClient";
 export async function POST(req: Request) {
   const { title } = await req.json();
 
-  const { data, error } = await supabase
-    .from("files")
-    .insert([{ title }])
-    .select();
+  const { error } = await supabase
+    .from("uploads")
+    .insert([{ filename: title }]); // hanya butuh filename, created_at auto
 
   if (error) {
-    return NextResponse.json({ error }, { status: 400 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, data });
+  return NextResponse.json({ success: true });
 }
