@@ -91,40 +91,53 @@ export function UploadOffering() {
         aria-hidden
       />
 
-      {/* Container di flow normal; beri margin-top tambahan sebagai safety */}
-      <div className="w-full max-w-md px-4 flex flex-col items-center mt-6 md:mt-8">
-        {/* Tombol: z-index lebih kecil dari logo (logo z-50). margin-top memastikan tidak dekat logo */}
+      {/* Fixed button: centered under the logo.
+          Adjust top values if you need different spacing. */}
+      <div className="fixed left-1/2 -translate-x-1/2 z-40">
         <button
           onClick={beginSelect}
           disabled={uploading}
-          className="z-20 px-6 py-3 rounded-md font-semibold transition border-2 border-black shadow-lg bg-[#FFDE00] text-black hover:shadow-xl disabled:opacity-60 mt-2"
+          className="px-6 py-3 rounded-md font-semibold transition border-2 border-black shadow-lg bg-[#FFDE00] text-black hover:shadow-xl disabled:opacity-60"
           style={{ WebkitTapHighlightColor: "transparent" }}
+          // Responsive top spacing via inline styles with Tailwind utility wrappers:
         >
-          {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload File"}
+          {uploading ? `Uploading ${Math.floor(progress)}%` : "Upload Offering"}
         </button>
 
-        {/* Progress bar */}
+        {/* progress bar (position relative below the button) */}
         {uploading && (
-          <div className="w-56 h-2 rounded-md bg-black/10 overflow-hidden mt-3">
+          <div className="w-56 h-2 rounded-md bg-black/10 overflow-hidden mt-3 mx-auto">
             <div
               className="h-full bg-[#FFDE00] transition-all duration-200 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
         )}
+      </div>
 
-        {/* Scrollable list */}
-        <div
-          ref={listRef}
-          className="w-full mt-6 max-h-[60vh] overflow-y-auto flex flex-col items-center space-y-3 pb-6"
-        >
+      {/* Scrollable list area
+          We position it fixed and make its top sit below the button.
+          top values chosen to match button vertical placement (responsive).
+          Adjust these `top-[...]` values if you tweak button top spacing. */}
+      <div
+        ref={listRef}
+        className="
+          fixed left-0 right-0 bottom-0
+          top-[12.5rem] md:top-[14.5rem] lg:top-[16.5rem]
+          overflow-y-auto flex justify-center
+        "
+      >
+        <div className="w-full max-w-md px-4 pt-4 pb-8">
           {items.length === 0 ? (
-            <p className="text-[#FFDE00] mt-4">No files uploaded yet</p>
+            <p className="text-[#FFDE00] text-center">No files uploaded yet</p>
           ) : (
             items
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((o) => (
-                <div key={o.id} className="leading-relaxed w-full text-center text-sm text-[#FFDE00]">
+                <div
+                  key={o.id}
+                  className="leading-relaxed w-full text-center text-sm text-[#FFDE00] py-2"
+                >
                   {formatLine(o)}
                 </div>
               ))
